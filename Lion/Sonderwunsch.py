@@ -1,3 +1,10 @@
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]  # Repo-Root
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import os
 import streamlit as st
 
@@ -18,11 +25,6 @@ from pages import (
     themenblaetter,
     freigabedokumente,
 )
-import sys
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]  # Repo-Root (eine Ebene über Lion/)
-sys.path.insert(0, str(ROOT))
 
 # ---------------------------------------------------------
 # CONFIG
