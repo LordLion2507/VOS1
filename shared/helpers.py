@@ -38,7 +38,7 @@ def sidebar_global():
             "Projektorganigramm",
             "LOP",
             "CPM",
-            "Laufwerk",
+            "Datenablage",
             "Themenblätter",
             "Freigabedokumente",
         ]
