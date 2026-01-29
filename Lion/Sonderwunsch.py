@@ -18,6 +18,11 @@ from pages import (
     themenblaetter,
     freigabedokumente,
 )
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]  # Repo-Root (eine Ebene über Lion/)
+sys.path.insert(0, str(ROOT))
 
 # ---------------------------------------------------------
 # CONFIG
