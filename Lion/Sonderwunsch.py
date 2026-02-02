@@ -13,7 +13,7 @@ from shared.data import seed_data
 from shared.helpers import sidebar_global
 
 from pages import (
-    datenablage,
+    laufwerk,
     projektuebersicht,
     projektplan,
     aenderungsliste,
@@ -88,8 +88,8 @@ elif page == "LOP":
     lop.render()
 elif page == "CPM":
     cpm.render()
-elif page == "Datenablage":
-    datenablage.render()
+elif page == "Laufwerk":
+    laufwerk.render()
 elif page == "Themenblätter":
     themenblaetter.render()
 elif page == "Freigabedokumente":
