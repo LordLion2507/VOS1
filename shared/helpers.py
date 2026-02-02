@@ -23,7 +23,7 @@ def project_nav_box():
     st.button("Projektorganigramm", use_container_width=True, on_click=set_page, args=("Projektorganigramm",))
     st.button("LOP", use_container_width=True, on_click=set_page, args=("LOP",))
     st.button("Freigabedokumente", use_container_width=True, on_click=set_page, args=("Freigabedokumente",))
-    st.button("Datenablage", use_container_width=True, on_click=set_page, args=("Datenablage",))
+    st.button("Laufwerk", use_container_width=True, on_click=set_page, args=("Laufwerk",))
 
 def sidebar_global():
     with st.sidebar:
@@ -39,7 +39,7 @@ def sidebar_global():
             "Projektorganigramm",
             "LOP",
             "CPM",
-            "Datenablage",
+            "Laufwerk",
             "Themenblätter",
             "Freigabedokumente",
         ]
