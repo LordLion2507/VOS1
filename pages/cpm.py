@@ -21,6 +21,7 @@ TABLE_COLS = [
 
 EXPLORER_COLS = ["Name", "Änderungsdatum", "Typ", "Größe"]
 
+
 # ---------------------------------------------------------
 # DUMMY DATA
 # ---------------------------------------------------------
@@ -76,6 +77,7 @@ def _explorer_df(kind):
     base = date.today()
     items = []
     names = ["Datei1.xlsx", "Datei2.pdf", "Dokument.txt", "Liste.csv", "Bild.png"]
+
     for i, n in enumerate(names):
         items.append(
             {
@@ -85,7 +87,32 @@ def _explorer_df(kind):
                 "Größe": f"{random.randint(20, 500)} KB",
             }
         )
+
     return pd.DataFrame(items)[EXPLORER_COLS]
+
+
+def _make_detail_log_df():
+    rows = []
+    base = date.today()
+    texts = [
+        "VORBEREITUNG FÜR CRK-ENTSCHEID ABGESCHLOSSEN",
+        "CRK-ENTSCHEID LÄUFT VOR",
+        "ÄNDERUNGSMANAGEMENT ABGESCHLOSSEN",
+        "IWAS AUFTRAG GEBUCHT",
+        "RÜCKFRAGE LIEFERANT / FREIGABE AUSSTEHEND",
+        "PRÜFUNG TECHNIK / ZEICHNUNG",
+    ]
+    for i in range(1, 13):
+        rows.append(
+            {
+                "ASN Datum AS": (base - timedelta(days=(18 - i))).strftime("%d.%m.%Y"),
+                "A. v. Ber": random.choice(["P40", "P20", "SOLO.", "E", "I"]),
+                "Text": random.choice(texts),
+                "Stat": "🟢",
+                "Zieltermin": (base + timedelta(days=random.randint(1, 30))).strftime("%d.%m.%Y"),
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------
@@ -132,6 +159,11 @@ def _inject_style():
             background: #f6f9fd;
             border-radius: 4px;
             padding: 8px;
+          }
+          .crumb {
+            font-size: 0.9rem;
+            opacity: 0.75;
+            margin-bottom: 8px;
           }
         </style>
         """,
@@ -186,49 +218,34 @@ def _render_new_modal():
 
 
 # ---------------------------------------------------------
-# CPM DETAIL POPUP (Screenshot-like)
+# DETAIL PAGE (full width, not a popup)
 # ---------------------------------------------------------
-def _make_detail_log_df():
-    # unten im Screenshot: Ereignisliste mit Text + Status + Zieltermin
-    rows = []
-    base = date.today()
-    texts = [
-        "VORBEREITUNG FÜR CRK-ENTSCHEID ABGESCHLOSSEN",
-        "CRK-ENTSCHEID LÄUFT VOR",
-        "ÄNDERUNGSMANAGEMENT ABGESCHLOSSEN",
-        "IWAS AUFTRAG GEBUCHT",
-        "RÜCKFRAGE LIEFERANT / FREIGABE AUSSTEHEND",
-        "PRÜFUNG TECHNIK / ZEICHNUNG",
-    ]
-    for i in range(1, 11):
-        rows.append(
-            {
-                "ASN Datum AS": (base - timedelta(days=(12 - i))).strftime("%d.%m.%Y"),
-                "A. v. Ber": random.choice(["P40", "P20", "SOLO.", "E", "I"]),
-                "Text": random.choice(texts),
-                "Stat": "🟢",
-                "Zieltermin": (base + timedelta(days=random.randint(1, 30))).strftime("%d.%m.%Y"),
-            }
-        )
-    return pd.DataFrame(rows)
-
-
-@st.dialog("CPM Punkt bearbeiten")
-def _render_cpm_detail_dialog(row: dict):
-    # Titlebar wie im Screenshot
+def _render_detail_page(row: dict):
     st.markdown("<div class='sap-title'>CPM Punkt bearbeiten</div>", unsafe_allow_html=True)
 
-    # LAYOUT: links Inhalte, rechts Button-Leiste
-    left, right = st.columns([0.80, 0.20], gap="small")
+    # Breadcrumb + back
+    top_left, top_right = st.columns([0.75, 0.25])
+    with top_left:
+        st.markdown(
+            f"<div class='crumb'>Classic Parts Monitor  ›  CPM {row.get('CPM','')} / Unterpunkt {row.get('Unterpunkt','')}</div>",
+            unsafe_allow_html=True,
+        )
+    with top_right:
+        if st.button("← Zurück zur Liste", use_container_width=True):
+            st.session_state.cpm_view = "MAIN"
+            st.session_state.cpm_selected_row = None
+            st.rerun()
 
-    # -------------------------
-    # BOX OBEN (Basisdaten)
-    # -------------------------
+    # Layout: links Inhalte, rechts Button-Leiste
+    left, right = st.columns([0.82, 0.18], gap="small")
+
     with left:
+        # -------------------------
+        # BOX OBEN
+        # -------------------------
         st.markdown("<div class='sap-box'>", unsafe_allow_html=True)
         r1c1, r1c2, r1c3 = st.columns([0.33, 0.33, 0.34], gap="small")
 
-        # Links (wie Screenshot: CPM Punkt, Status, Anlass SOBE, Techniker)
         with r1c1:
             st.markdown("<div class='sap-label'>CPM Punkt</div>", unsafe_allow_html=True)
             st.text_input("", value=str(row.get("CPM", "")), disabled=True, key="d_cpm_punkt")
@@ -242,7 +259,6 @@ def _render_cpm_detail_dialog(row: dict):
             st.markdown("<div class='sap-label'>Techniker</div>", unsafe_allow_html=True)
             st.text_input("", value="TS JH: Peltke", key="d_techniker")
 
-        # Mitte (Screenshot: Kunde/Modell, IWAS-Nr., SAP-An..., Fzg.Aus.Dat.)
         with r1c2:
             st.markdown("<div class='sap-label'>Kunde / Modell</div>", unsafe_allow_html=True)
             st.text_input("", value="IDCA TRAZZI – UMSETZUNGSBAHR / BOM OC1", key="d_kunde_modell")
@@ -256,24 +272,18 @@ def _render_cpm_detail_dialog(row: dict):
             st.markdown("<div class='sap-label'>Fzg. Aus. Dat.</div>", unsafe_allow_html=True)
             st.text_input("", value=(date.today() + timedelta(days=30)).strftime("%d.%m.%Y"), key="d_fzg_aus")
 
-        # Rechts (Screenshot oben rechts ist eher leer/spacing)
         with r1c3:
             st.markdown("<div class='sap-label'>Nr.</div>", unsafe_allow_html=True)
             st.text_input("", value=f"{row.get('CPM','')}/{row.get('Unterpunkt','')}", disabled=True, key="d_nr")
-
             st.markdown("<div class='sap-label'> </div>", unsafe_allow_html=True)
             st.text_input("", value="", key="d_blank1")
-
-            st.markdown("<div class='sap-label'> </div>", unsafe_allow_html=True)
             st.text_input("", value="", key="d_blank2")
-
-            st.markdown("<div class='sap-label'> </div>", unsafe_allow_html=True)
             st.text_input("", value="", key="d_blank3")
 
         st.markdown("</div>", unsafe_allow_html=True)
 
         # -------------------------
-        # BOX MITTE (Detaildaten)
+        # BOX MITTE
         # -------------------------
         st.markdown("<div class='sap-box'>", unsafe_allow_html=True)
 
@@ -323,7 +333,7 @@ def _render_cpm_detail_dialog(row: dict):
             st.text_input("", value="0,000", key="m_rst_menge")
 
             st.markdown("<div class='sap-label'>Prio</div>", unsafe_allow_html=True)
-            st.text_input("", value=row.get("Eink.", ""), key="m_prio")
+            st.text_input("", value=str(row.get("Eink.", "")), key="m_prio")
 
             st.markdown("<div class='sap-label'>Anforderer</div>", unsafe_allow_html=True)
             st.text_input("", value="M. BAUER", key="m_anforderer")
@@ -334,24 +344,21 @@ def _render_cpm_detail_dialog(row: dict):
         st.markdown("</div>", unsafe_allow_html=True)
 
         # -------------------------
-        # TABELLE UNTEN (ab Mitte)
+        # TABELLE UNTEN
         # -------------------------
         st.markdown("<div class='table-wrap'>", unsafe_allow_html=True)
         log_df = _make_detail_log_df()
-
         st.dataframe(
             log_df,
             hide_index=True,
             use_container_width=True,
-            height=280,
+            height=360,
         )
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # -------------------------
-    # RECHTS: Button-Leiste wie Screenshot
-    # -------------------------
     with right:
         st.markdown("<div class='sap-box sap-btn-col'>", unsafe_allow_html=True)
+
         if st.button("AA / BA neu anlegen", use_container_width=True):
             st.toast("Dummy: AA/BA neu anlegen", icon="🧩")
         if st.button("AA / BA Bearbeiten", use_container_width=True):
@@ -360,37 +367,35 @@ def _render_cpm_detail_dialog(row: dict):
             st.toast("Dummy: Anhänge", icon="📎")
         if st.button("Status planen", use_container_width=True):
             st.toast("Dummy: Status planen", icon="🗓️")
+
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
         if st.button("Neuer UP", use_container_width=True):
             st.toast("Dummy: Neuer UP", icon="➕")
         if st.button("UP -", use_container_width=True):
             st.toast("Dummy: UP -", icon="➖")
         if st.button("UP-Nr", use_container_width=True):
             st.toast("Dummy: UP-Nr", icon="🔢")
+
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
         if st.button("Anwendungsdaten", use_container_width=True):
             st.toast("Dummy: Anwendungsdaten", icon="📄")
         if st.button("Statushistorie", use_container_width=True):
             st.toast("Dummy: Statushistorie", icon="🕘")
-        st.markdown("</div>", unsafe_allow_html=True)
 
-    # unten wie “OK/Abbrechen” gibt’s in deinem Screenshot nicht als Button,
-    # wir lassen den Dialog einfach über das X oben schließen.
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------
 # MAIN TABLE
 # ---------------------------------------------------------
-def _main():
+def _main_table():
     if "cpm_df" not in st.session_state:
         st.session_state.cpm_df = _make_rows()
 
-    # Auswahl-Event zurücksetzen
-    st.session_state.setdefault("cpm_selected_idx", None)
-
     df = st.session_state.cpm_df
 
-    # Tabelle mit Zeilen-Auswahl (Klick)
     event = st.dataframe(
         df,
         height=650,
@@ -401,13 +406,12 @@ def _main():
         key="cpm_table_select",
     )
 
-    # Button unten links
+    # Button unten links (unter der Tabelle)
     left, _ = st.columns([0.22, 0.78])
     with left:
         if st.button("➕ Neues CPM anlegen", use_container_width=True):
             _render_new_modal()
 
-    # Wenn eine Zeile selektiert wurde: Dialog öffnen
     selected_rows = []
     try:
         selected_rows = event.selection.rows
@@ -416,8 +420,9 @@ def _main():
 
     if selected_rows:
         idx = selected_rows[0]
-        row_dict = df.iloc[idx].to_dict()
-        _render_cpm_detail_dialog(row_dict)
+        st.session_state.cpm_selected_row = df.iloc[idx].to_dict()
+        st.session_state.cpm_view = "DETAIL"
+        st.rerun()
 
 
 # ---------------------------------------------------------
@@ -443,11 +448,21 @@ def _explorer(kind):
 # ---------------------------------------------------------
 def render():
     _inject_style()
+
     st.session_state.setdefault("cpm_view", "MAIN")
+    st.session_state.setdefault("cpm_selected_row", None)
 
     _header()
 
-    if st.session_state.cpm_view == "MAIN":
-        _main()
+    view = st.session_state.cpm_view
+
+    if view == "MAIN":
+        _main_table()
+    elif view == "DETAIL":
+        row = st.session_state.cpm_selected_row or {}
+        _render_detail_page(row)
+    elif view in ("PDMU", "ANHANG"):
+        _explorer(view)
     else:
-        _explorer(st.session_state.cpm_view)
+        st.session_state.cpm_view = "MAIN"
+        st.rerun()
