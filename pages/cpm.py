@@ -243,7 +243,7 @@ def _render_detail_page(row: dict):
         # -------------------------
         # BOX OBEN
         # -------------------------
-        st.markdown("<div class='sap-box'>", unsafe_allow_html=True)
+        
         r1c1, r1c2, r1c3 = st.columns([0.33, 0.33, 0.34], gap="small")
 
         with r1c1:
@@ -280,12 +280,12 @@ def _render_detail_page(row: dict):
             st.text_input("", value="", key="d_blank2")
             st.text_input("", value="", key="d_blank3")
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    
 
         # -------------------------
         # BOX MITTE
         # -------------------------
-        st.markdown("<div class='sap-box'>", unsafe_allow_html=True)
+        
 
         m1, m2, m3, m4 = st.columns([0.20, 0.22, 0.28, 0.30], gap="small")
 
