@@ -94,7 +94,6 @@ def _header():
         unsafe_allow_html=True,
     )
 
-    # Abstand nach oben fixen
     st.markdown("<div style='height:15px'></div>", unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns([7, 1.5, 1.5])
@@ -113,29 +112,29 @@ def _header():
 
 
 # ---------------------------------------------------------
-# NEW CPM MODAL
+# NEW CPM DIALOG (FIXED VERSION)
 # ---------------------------------------------------------
+@st.dialog("Neues CPM anlegen")
 def _render_new_modal():
-    with st.modal("Neues CPM anlegen"):
-        new_row = {}
+    new_row = {}
 
-        for col in TABLE_COLS:
-            new_row[col] = st.text_input(col)
+    for col in TABLE_COLS:
+        new_row[col] = st.text_input(col)
 
-        c1, c2 = st.columns([1, 1])
+    c1, c2 = st.columns([1, 1])
 
-        with c1:
-            if st.button("Abbrechen", use_container_width=True):
-                st.rerun()
+    with c1:
+        if st.button("Abbrechen", use_container_width=True):
+            st.rerun()
 
-        with c2:
-            if st.button("Speichern", use_container_width=True):
-                df = st.session_state.cpm_df
-                st.session_state.cpm_df = pd.concat(
-                    [df, pd.DataFrame([new_row])],
-                    ignore_index=True,
-                )
-                st.rerun()
+    with c2:
+        if st.button("Speichern", use_container_width=True):
+            df = st.session_state.cpm_df
+            st.session_state.cpm_df = pd.concat(
+                [df, pd.DataFrame([new_row])],
+                ignore_index=True,
+            )
+            st.rerun()
 
 
 # ---------------------------------------------------------
@@ -154,7 +153,6 @@ def _main():
         hide_index=True,
     )
 
-    # Button unten links
     if st.button("➕ Neues CPM anlegen"):
         _render_new_modal()
 
