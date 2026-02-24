@@ -257,11 +257,11 @@ def _render_detail_page(row: dict):
             st.text_input("", value="SONDERWUNSCH", key="d_anlass_sobe")
 
             st.markdown("<div class='sap-label'>Techniker</div>", unsafe_allow_html=True)
-            st.text_input("", value="TS JH: Peltke", key="d_techniker")
+            st.text_input("", value="T3 JH: Peltke", key="d_techniker")
 
         with r1c2:
             st.markdown("<div class='sap-label'>Kunde / Modell</div>", unsafe_allow_html=True)
-            st.text_input("", value="IDCA TRAZZI – UMSETZUNGSBAHR / BOM OC1", key="d_kunde_modell")
+            st.text_input("", value="LUCA TRAZZI – UMSETZUNGSPHASE / SOW OC1", key="d_kunde_modell")
 
             st.markdown("<div class='sap-label'>IWAS-Nr.</div>", unsafe_allow_html=True)
             st.text_input("", value=str(random.randint(20000000, 29999999)), key="d_iwas_nr")
@@ -304,7 +304,7 @@ def _render_detail_page(row: dict):
 
         with m2:
             st.markdown("<div class='sap-label'>Lieferant</div>", unsafe_allow_html=True)
-            st.text_input("", value=str(row.get("Liefer. / Standort", "")), key="m_lieferant")
+            st.text_input("", value="B. ENG", key="m_lieferant")
 
             st.markdown("<div class='sap-label'>Teilenummer</div>", unsafe_allow_html=True)
             st.text_input("", value=str(row.get("Teilenummer alt", "")), key="m_teilenummer")
