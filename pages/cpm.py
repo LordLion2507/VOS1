@@ -1,282 +1,206 @@
 import streamlit as st
 import pandas as pd
-from datetime import date
-from shared.helpers import header_bar
+from datetime import date, timedelta
+import random
 
 # ---------------------------------------------------------
-# CPM: Felddefinitionen (jeweils "von" + "bis")
+# Helpers: Dummy Data
 # ---------------------------------------------------------
-RANGE_FIELDS = [
-    "CPM-Punkt",
-    "Unterpunkt",
-    "Teilenummer",
-    "Status UP",
-    "Reichweite (Jahre)",
-    "Prio",
-    "Disponent",
-    "Einkäufer",
-    "Techniker",
-    "Produktmanager",
-    "CLIX",
-    "Datum angelegt (Status 000)",
-    "Anlass",
-    "Anlass SOBE",
-    "Änd. Antrag",
-    "Lieferanten-Nr.",
-    "Kunde/Modell",
-    "IWAS-Nr.",
-    "Vorgang",
-    "Anforderer",
-    "Art Arbeitsschritt",
-    "Verantwortlicher Bereich",
-    "Status Arbeitsschritt",
-    "Text Arbeitsschritt",
-    "Zieltermin",
-]
-
-# Welche Spalten in der Tabelle sichtbar sein sollten
 TABLE_COLS = [
-    "CPM-ID",
-    "CPM-Punkt",
+    "Stat. Up",
+    "CPM",
     "Unterpunkt",
-    "Teilenummer",
-    "Status UP",
-    "Prio_von",
-    "Verantwortlicher Bereich",
-    "Status Arbeitsschritt",
-    "Zieltermin",
+    "Materialkurztext",
+    "Teilenummer alt",
+    "Teilenummer neu",
+    "Liefer. / Standort",
+    "Eink.",
+    "Ter. Anlief",
+    "Text",
 ]
 
-AKTIONEN = ["CPM-Punkt neu erfassen", "SOBE neu erfassen"]
-ANZEIGEUMFANG = ["Nur UP-Auflösung", "aggregierte Anzeige", "Detailanzeige"]
+EXPLORER_COLS = ["Name", "Änderungsdatum", "Typ", "Größe"]
 
 
-# ---------------------------------------------------------
-# Session Init + Dummy Rows
-# ---------------------------------------------------------
-def _make_empty_row(cpm_id: str) -> dict:
-    row = {"CPM-ID": cpm_id}
-
-    # Aktionen
-    row["Aktion_CPM"] = False
-    row["Aktion_SOBE"] = False
-
-    # Anzeigeumfang: single value
-    row["Anzeigeumfang"] = "Nur UP-Auflösung"
-
-    # Range-Felder als _von/_bis
-    for f in RANGE_FIELDS:
-        row[f"{f}_von"] = ""
-        row[f"{f}_bis"] = ""
-
-    row["Datum angelegt (Status 000)_von"] = str(date.today())
-    row["Datum angelegt (Status 000)_bis"] = ""
-    return row
+def _random_part_alt() -> str:
+    # 8 random digits + XX
+    return f"{random.randint(10_000_000, 99_999_999)}XX"
 
 
-def _init_cpm():
-    if "cpm_rows" not in st.session_state:
-        r1 = _make_empty_row("CPM-001")
-        r1.update(
+def _random_date_str_between_2021_05_28_and_30() -> str:
+    base = date(2021, 5, 28)
+    d = base + timedelta(days=random.randint(0, 2))  # 28..30
+    return d.strftime("%d.%m.%Y")
+
+
+def _make_dummy_rows() -> pd.DataFrame:
+    rows = []
+
+    # Beispielzeile (von dir vorgegeben)
+    rows.append(
+        {
+            "Stat. Up": 131,
+            "CPM": 15078,
+            "Unterpunkt": 1,
+            "Materialkurztext": "",
+            "Teilenummer alt": "99361130XX",
+            "Teilenummer neu": "993351201OC001",
+            "Liefer. / Standort": "SILVER FALCON GMBH",
+            "Eink.": "PW",
+            "Ter. Anlief": "30.05.2021",
+            "Text": "IWAS AUFTRAG GEBUCHT",
+        }
+    )
+
+    # 20 weitere Dummy-Zeilen
+    # Hinweis: "Teilenummer neu" -> 2x irgendwo platzieren, einmal mit 1 Ziffer geändert
+    # Wir platzieren:
+    # - Zeile 2: 993351201OC001
+    # - Zeile 8: 993351202OC001 (1 Ziffer geändert)
+    special_map = {2: "993351201OC001", 8: "993351202OC001"}
+
+    eink_cycle = ["P2", "PW", "PK"]
+
+    for i in range(2, 22):  # 2..21 = 20 Zeilen
+        rows.append(
             {
-                "Aktion_CPM": True,
-                "Anzeigeumfang": "Nur UP-Auflösung",
-                "CPM-Punkt": "OE3-001",
-                "Unterpunkt": "U-01",
-                "Teilenummer": "9A1-807-221",
-                "Status UP": "000",
-                "Prio": "A",
-                "Verantwortlicher Bereich": "Konstruktion",
-                "Status Arbeitsschritt": "SOP",
-                "Zieltermin": "2026-02-10",
+                "Stat. Up": random.choice([139, 131, 122]),
+                "CPM": 15078,
+                "Unterpunkt": i,
+                "Materialkurztext": "",
+                "Teilenummer alt": _random_part_alt(),
+                "Teilenummer neu": special_map.get(i, ""),
+                "Liefer. / Standort": "SILVER FALCON GMBH",
+                "Eink.": eink_cycle[(i - 2) % len(eink_cycle)],
+                "Ter. Anlief": _random_date_str_between_2021_05_28_and_30(),
+                "Text": "IWAS AUFTRAG GEBUCHT",
             }
         )
 
-        r2 = _make_empty_row("CPM-002")
-        r2.update(
-            {
-                "Aktion_SOBE": True,
-                "Anzeigeumfang": "aggregierte Anzeige",
-                "CPM-Punkt_von": "OE3-007",
-                "Unterpunkt_von": "U-03",
-                "Teilenummer_von": "9A1-907-115",
-                "Status UP_von": "010",
-                "Prio_von": "B",
-                "Verantwortlicher Bereich_von": "Elektronik",
-                "Status Arbeitsschritt_von": "EOP",
-                "Zieltermin_von": "2026-03-01",
-            }
-        )
-
-        st.session_state.cpm_rows = pd.DataFrame([r1, r2])
-
-    st.session_state.setdefault("cpm_search", "")
-    st.session_state.setdefault("cpm_form_open", False)
-    st.session_state.setdefault("cpm_form_mode", None)  # "new" | "edit"
-    st.session_state.setdefault("selected_cpm_id", None)
+    return pd.DataFrame(rows)[TABLE_COLS]
 
 
-# ---------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------
-def _filter_df(df: pd.DataFrame, query: str) -> pd.DataFrame:
-    q = (query or "").strip().lower()
-    if not q:
-        return df
-    return df[df.apply(lambda r: q in " ".join(map(str, r.values)).lower(), axis=1)]
+def _make_explorer_df(kind: str) -> pd.DataFrame:
+    # kind: "PDMU" oder "Anhang"
+    # Explorer-Style Tabelle: Name | Änderungsdatum | Typ | Größe
+    base_date = date.today()
+    items = []
 
-
-def _next_cpm_id() -> str:
-    df = st.session_state.cpm_rows
-    if df.empty:
-        return "CPM-001"
-    nums = []
-    for x in df["CPM-ID"].astype(str).tolist():
-        try:
-            nums.append(int(x.split("-")[-1]))
-        except Exception:
-            pass
-    n = max(nums) + 1 if nums else (len(df) + 1)
-    return f"CPM-{n:03d}"
-
-
-def _get_row_for_form(mode: str) -> dict:
-    if mode == "edit" and st.session_state.selected_cpm_id:
-        df = st.session_state.cpm_rows
-        pick = df[df["CPM-ID"] == st.session_state.selected_cpm_id]
-        if not pick.empty:
-            row = pick.iloc[0].to_dict()
-            if row.get("Anzeigeumfang") not in ANZEIGEUMFANG:
-                row["Anzeigeumfang"] = "Nur UP-Auflösung"
-            return row
-
-    return _make_empty_row(_next_cpm_id())
-
-
-def _write_row_back(mode: str, row_dict: dict):
-    df = st.session_state.cpm_rows.copy()
-    if mode == "new":
-        st.session_state.cpm_rows = pd.concat([df, pd.DataFrame([row_dict])], ignore_index=True)
+    if kind == "PDMU":
+        names = [
+            "PDMU_Stueckliste.xlsx",
+            "PDMU_Aenderungsstand.pdf",
+            "PDMU_Freigabe.txt",
+            "PDMU_Bericht_001.docx",
+            "PDMU_Export.csv",
+        ]
     else:
-        mask = df["CPM-ID"] == row_dict["CPM-ID"]
-        df.loc[mask, :] = pd.DataFrame([row_dict]).values
-        st.session_state.cpm_rows = df
+        names = [
+            "Anhang_Foto_01.png",
+            "Anhang_Skizze.pdf",
+            "Anhang_Notizen.txt",
+            "Anhang_Berechnung.xlsx",
+            "Anhang_Anforderung.docx",
+        ]
 
+    types = {
+        ".xlsx": "Microsoft Excel Worksheet",
+        ".pdf": "PDF-Datei",
+        ".txt": "Textdokument",
+        ".docx": "Microsoft Word Document",
+        ".csv": "CSV-Datei",
+        ".png": "PNG-Datei",
+    }
 
-# ---------------------------------------------------------
-# CPM Maske (Schablone) – Expander
-# ---------------------------------------------------------
-def _render_cpm_form(mode: str):
-    row = _get_row_for_form(mode)
-    cpm_id = row.get("CPM-ID", "")
-
-    title = "CPM-Punkt neu erfassen" if mode == "new" else f"CPM bearbeiten – {cpm_id}"
-    with st.expander(title, expanded=True):
-
-        st.markdown("#### Aktionen")
-        a1, a2, _ = st.columns([0.25, 0.25, 0.50])
-        with a1:
-            ak_cpm = st.checkbox("CPM-Punkt neu erfassen", value=bool(row.get("Aktion_CPM", False)), key=f"act_cpm_{cpm_id}")
-        with a2:
-            ak_sobe = st.checkbox("SOBE neu erfassen", value=bool(row.get("Aktion_SOBE", False)), key=f"act_sobe_{cpm_id}")
-
-        st.markdown("#### Anzeigeumfang")
-        # ✅ stabil: single-select Radio (horizontal)
-        scope = st.radio(
-            label="",
-            options=ANZEIGEUMFANG,
-            index=ANZEIGEUMFANG.index(row.get("Anzeigeumfang", "Nur UP-Auflösung")) if row.get("Anzeigeumfang") in ANZEIGEUMFANG else 0,
-            horizontal=True,
-            key=f"scope_{cpm_id}",
+    for idx, name in enumerate(names, start=1):
+        ext = "." + name.split(".")[-1]
+        items.append(
+            {
+                "Name": name,
+                "Änderungsdatum": (base_date - timedelta(days=idx)).strftime("%d.%m.%Y"),
+                "Typ": types.get(ext, "Datei"),
+                "Größe": f"{random.randint(12, 980)} KB",
+            }
         )
 
-        st.divider()
-        st.markdown("#### Eingabe (von ... bis)")
-
-        st.text_input("CPM-ID", value=cpm_id, disabled=True, key=f"id_{cpm_id}")
-
-        form_values = {"CPM-ID": cpm_id}
-        form_values["Aktion_CPM"] = bool(ak_cpm)
-        form_values["Aktion_SOBE"] = bool(ak_sobe)
-        form_values["Anzeigeumfang"] = scope
-
-        for f in RANGE_FIELDS:
-            c1, c2, c3 = st.columns([0.46, 0.08, 0.46])
-            with c1:
-                v = st.text_input(f"{f}", value=str(row.get(f"{f}_von", "")), key=f"von_{cpm_id}_{f}")
-            with c2:
-                st.markdown("<div style='padding-top:32px; text-align:center;'>bis</div>", unsafe_allow_html=True)
-            with c3:
-                b = st.text_input(" ", value=str(row.get(f"{f}_bis", "")), key=f"bis_{cpm_id}_{f}")
-
-            form_values[f"{f}_von"] = v
-            form_values[f"{f}_bis"] = b
-
-        st.markdown("")
-        csave, ccancel = st.columns([0.25, 0.25])
-
-        with csave:
-            if st.button("Speichern", use_container_width=True, key=f"save_{cpm_id}"):
-                _write_row_back(mode, form_values)
-                st.session_state.cpm_form_open = False
-                st.session_state.cpm_form_mode = None
-                st.session_state.selected_cpm_id = None
-                st.rerun()
-
-        with ccancel:
-            if st.button("Abbrechen", use_container_width=True, key=f"cancel_{cpm_id}"):
-                st.session_state.cpm_form_open = False
-                st.session_state.cpm_form_mode = None
-                st.session_state.selected_cpm_id = None
-                st.rerun()
+    return pd.DataFrame(items)[EXPLORER_COLS]
 
 
 # ---------------------------------------------------------
-# Page Render
+# UI: Header / Explorer View / Main Table
 # ---------------------------------------------------------
-def render():
-    header_bar("Classic Parts Monitor")
-    _init_cpm()
+def _render_header():
+    # Links: Titel + Stand; rechts: Buttons
+    left, right = st.columns([0.72, 0.28], vertical_alignment="top")
 
-    st.session_state.cpm_search = st.text_input(
-        "Suche (CPM-ID / Teilenummer / Bereich / Text ...)",
-        value=st.session_state.cpm_search,
-        placeholder="z. B. OE3-001 oder 9A1-907-115 oder Elektronik …",
-    )
+    with left:
+        st.markdown("## Classic Parts Monitor")
+        st.markdown(
+            f"<div style='margin-top:-8px; font-size:0.9rem; opacity:0.75;'>"
+            f"Stand: {date.today().strftime('%d.%m.%Y')}"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
-    df_all = st.session_state.cpm_rows.copy()
-    df = _filter_df(df_all, st.session_state.cpm_search)
+    with right:
+        # Buttons oben rechts
+        r1, r2 = st.columns(2)
+        with r1:
+            if st.button("PDMU", use_container_width=True):
+                st.session_state.cpm_view = "PDMU"
+                st.rerun()
+        with r2:
+            if st.button("Anhang", use_container_width=True):
+                st.session_state.cpm_view = "Anhang"
+                st.rerun()
 
-    table_df = df[TABLE_COLS].copy()
+    st.markdown("---")
 
-    event = st.dataframe(
-        table_df,
-        hide_index=True,
-        use_container_width=True,
-        selection_mode="single-row",
-        on_select="rerun",
-        key="cpm_table_select",
-    )
 
-    selected_rows = []
-    try:
-        selected_rows = event.selection.rows
-    except Exception:
-        selected_rows = []
+def _render_explorer(kind: str):
+    # Explorer-Ansicht: oben links Name + Tabelle wie Windows Explorer
+    st.markdown(f"### {kind}")
 
-    if selected_rows:
-        picked_id = table_df.iloc[selected_rows[0]]["CPM-ID"]
-        st.session_state.selected_cpm_id = picked_id
-        st.session_state.cpm_form_open = True
-        st.session_state.cpm_form_mode = "edit"
-
-    st.markdown("")
-
-    if st.button("➕ CPM-Punkt neu erfassen", use_container_width=False):
-        st.session_state.selected_cpm_id = None
-        st.session_state.cpm_form_open = True
-        st.session_state.cpm_form_mode = "new"
+    if st.button("← Zurück", use_container_width=False):
+        st.session_state.cpm_view = "MAIN"
         st.rerun()
 
-    if st.session_state.cpm_form_open and st.session_state.cpm_form_mode in ("new", "edit"):
-        _render_cpm_form(st.session_state.cpm_form_mode)
+    df = _make_explorer_df(kind)
+
+    # Höhe setzen, damit scrollbars auftreten und Header sichtbar bleibt
+    st.dataframe(
+        df,
+        hide_index=True,
+        use_container_width=True,
+        height=520,
+    )
+
+
+def _render_main_table():
+    # große Tabelle, scrollbar, Header bleibt sichtbar (Streamlit macht das bei height)
+    if "cpm_table_df" not in st.session_state:
+        st.session_state.cpm_table_df = _make_dummy_rows()
+
+    df = st.session_state.cpm_table_df
+
+    # Optional: "sticky" Header + Scroll -> via height
+    st.dataframe(
+        df,
+        hide_index=True,
+        use_container_width=True,
+        height=650,
+    )
+
+
+# ---------------------------------------------------------
+# Public Render (called from Sonderwunsch router)
+# ---------------------------------------------------------
+def render():
+    st.session_state.setdefault("cpm_view", "MAIN")
+
+    _render_header()
+
+    if st.session_state.cpm_view in ("PDMU", "Anhang"):
+        _render_explorer(st.session_state.cpm_view)
+    else:
+        _render_main_table()
